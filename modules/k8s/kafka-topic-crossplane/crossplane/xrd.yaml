@@ -1,0 +1,48 @@
+# API de plataforma: los equipos piden KafkaTopic en su namespace (claim)
+# y Crossplane crea el XKafkaTopic a nivel cluster.
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xkafkatopics.platform.example.io
+spec:
+  group: platform.example.io
+  names:
+    kind: XKafkaTopic
+    plural: xkafkatopics
+  claimNames:
+    kind: KafkaTopic
+    plural: kafkatopics
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: [topicName]
+              properties:
+                topicName:
+                  type: string
+                  pattern: "^[a-z0-9._-]{1,249}$"
+                partitions:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 6
+                replicationFactor:
+                  type: integer
+                  default: 3
+                retentionMs:
+                  type: integer
+                  default: 604800000
+                cleanupPolicy:
+                  type: string
+                  enum: ["delete", "compact", "compact,delete"]
+                  default: delete
+                extraConfig:
+                  type: object
+                  additionalProperties:
+                    type: string

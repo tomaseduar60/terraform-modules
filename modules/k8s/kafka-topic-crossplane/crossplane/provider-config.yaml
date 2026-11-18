@@ -1,0 +1,19 @@
+# ProviderConfig de provider-kafka apuntando a Confluent Cloud.
+# El Secret se crea con ExternalSecret desde Secret Manager (nunca a mano).
+apiVersion: kafka.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: confluent
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: confluent-kafka-credentials
+      key: credentials
+# Contenido esperado de la key "credentials" (JSON):
+# {
+#   "brokers": ["pkc-xxxxx.us-central1.gcp.confluent.cloud:9092"],
+#   "sasl": { "mechanism": "PLAIN", "username": "<api-key>", "password": "<api-secret>" },
+#   "tls": {}
+# }

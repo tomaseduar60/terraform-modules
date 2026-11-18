@@ -1,0 +1,55 @@
+# Implementación con provider-kafka (crossplane-contrib). Contra Confluent Cloud se usa
+# un ProviderConfig con SASL_SSL y la API key del cluster guardada en un Secret.
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: xkafkatopics-confluent
+  labels:
+    provider: confluent
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.io/v1alpha1
+    kind: XKafkaTopic
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: topic
+            base:
+              apiVersion: topic.kafka.crossplane.io/v1alpha1
+              kind: Topic
+              spec:
+                providerConfigRef:
+                  name: confluent
+                forProvider:
+                  config: {}
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.topicName
+                toFieldPath: metadata.annotations[crossplane.io/external-name]
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.partitions
+                toFieldPath: spec.forProvider.partitions
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.replicationFactor
+                toFieldPath: spec.forProvider.replicationFactor
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.extraConfig
+                toFieldPath: spec.forProvider.config
+                policy:
+                  toFieldPath: MergeObjects
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.retentionMs
+                toFieldPath: spec.forProvider.config[retention.ms]
+                transforms:
+                  - type: convert
+                    convert:
+                      toType: string
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.cleanupPolicy
+                toFieldPath: spec.forProvider.config[cleanup.policy]
